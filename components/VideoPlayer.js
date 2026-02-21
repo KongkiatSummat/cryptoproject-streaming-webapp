@@ -1,6 +1,28 @@
 'use client'
 
 export default function VideoPlayer({ movie, onClose }) {
+  
+  const getEmbedUrl = (url) => {
+    if (!url) return null
+    
+    // YouTube
+    if (url.includes('youtube.com/embed')) return url
+    if (url.includes('youtube.com/watch')) {
+      const id = url.split('v=')[1]?.split('&')[0]
+      return `https://www.youtube.com/embed/${id}`
+    }
+    
+    // Google Drive
+    if (url.includes('drive.google.com')) {
+      const id = url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1]
+      return `https://drive.google.com/file/d/${id}/preview`
+    }
+    
+    return url
+  }
+
+  const embedUrl = getEmbedUrl(movie.video_url)
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-4xl">
@@ -15,12 +37,18 @@ export default function VideoPlayer({ movie, onClose }) {
         </div>
 
         <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-          <iframe
-            src={movie.video_url}
-            className="absolute inset-0 w-full h-full rounded-xl"
-            allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          />
+          {embedUrl ? (
+            <iframe
+              src={embedUrl}
+              className="absolute inset-0 w-full h-full rounded-xl"
+              allowFullScreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-800 rounded-xl">
+              <p className="text-gray-400">ไม่พบวิดีโอ</p>
+            </div>
+          )}
         </div>
 
         <div className="mt-4 bg-gray-800 rounded-xl p-4">
