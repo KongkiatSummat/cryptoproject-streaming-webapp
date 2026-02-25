@@ -4,7 +4,7 @@ import { useAccount, useWriteContract, useReadContract } from 'wagmi'
 import { parseEther } from 'viem'
 import { WATCH_TOKEN_ADDRESS, WATCH_TOKEN_ABI, STREAMING_CONTRACT_ADDRESS, STREAMING_ABI } from '../lib/contracts'
 
-export default function SubscriptionBanner() {
+export default function SubscriptionBanner({onSubscribed}) {
   const [mounted, setMounted] = useState(false)
   const { address, isConnected } = useAccount()
   const [loading, setLoading] = useState(false)
@@ -13,7 +13,7 @@ export default function SubscriptionBanner() {
     address: STREAMING_CONTRACT_ADDRESS,
     abi: STREAMING_ABI,
     functionName: 'isSubscribed',
-    args: [address],
+    args: [address],  
     query: { enabled: !!address }
   })
 
@@ -50,6 +50,7 @@ export default function SubscriptionBanner() {
       })
       await refetch()
       alert('สมัคร Subscription สำเร็จ! ดูหนังได้ 30 วันเลยครับ 🎉')
+      onSubscribed()
     } catch (err) {
       alert('เกิดข้อผิดพลาด: ' + err.message)
     } finally {
