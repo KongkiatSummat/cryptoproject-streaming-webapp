@@ -10,8 +10,7 @@ export default function Home() {
   const [movies, setMovies] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedMovie, setSelectedMovie] = useState(null)
-  const [search, setSearch] = useState('')
-  const [genre, setGenre] = useState('all')
+  const [heroMovie, setHeroMovie] = useState(null)
 
   useEffect(() => {
     fetchMovies()
@@ -22,82 +21,88 @@ export default function Home() {
       .from('movies')
       .select('*')
       .order('created_at', { ascending: false })
-
-    if (!error) setMovies(data)
+    if (!error) {
+      setMovies(data)
+      setHeroMovie(data[0])
+    }
     setLoading(false)
   }
 
-  const filteredMovies = movies.filter(movie => {
-    const matchSearch = movie.title.toLowerCase().includes(search.toLowerCase())
-    const matchGenre = genre === 'all' || movie.genre === genre
-    return matchSearch && matchGenre
-  })
-
-  const genres = ['all', ...new Set(movies.map(m => m.genre))]
+  const genres = [...new Set(movies.map(m => m.genre))]
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
       <Navbar />
+
+      {/* Hero Banner */}
+      {heroMovie && (
+        <div className="relative h-[70vh] w-full overflow-hidden">
+          <img
+            src={heroMovie.thumbnail_url}
+            alt={heroMovie.title}
+            className="w-full h-full object-cover opacity-50"
+            onError={(e) => e.target.src = `https://placehold.co/1280x720/1a1a2e/white?text=${encodeURIComponent(heroMovie.title)}`}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent" />
+          <div className="absolute bottom-16 left-10 max-w-lg">
+            <h1 className="text-5xl font-bold mb-3">{heroMovie.title}</h1>
+            <p className="text-gray-300 text-lg mb-6 line-clamp-3">{heroMovie.description}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setSelectedMovie(heroMovie)}
+                className="bg-white text-black font-bold px-8 py-3 rounded-lg hover:bg-gray-200 flex items-center gap-2"
+              >
+                ▶ ดูเลย
+              </button>
+              <button
+                onClick={() => setSelectedMovie(heroMovie)}
+                className="bg-gray-600 bg-opacity-70 text-white font-bold px-8 py-3 rounded-lg hover:bg-gray-500 flex items-center gap-2"
+              >
+                ℹ️ ข้อมูลเพิ่มเติม
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <SubscriptionBanner />
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-b from-gray-900 to-gray-950 px-6 py-10">
-        <h1 className="text-4xl font-bold text-center">
-          🎬 <span className="text-red-500">Crypto</span>Flix
-        </h1>
-        <p className="text-gray-400 text-center mt-2">ดูหนังด้วย WATCH Token</p>
-
-        {/* Search */}
-        <div className="max-w-xl mx-auto mt-6">
-          <input
-            type="text"
-            placeholder="🔍 ค้นหาหนัง..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full bg-gray-800 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
-          />
-        </div>
-
-        {/* Genre Filter */}
-        <div className="flex gap-2 justify-center mt-4 flex-wrap">
-          {genres.map(g => (
-            <button
-              key={g}
-              onClick={() => setGenre(g)}
-              className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                genre === g
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
-            >
-              {g === 'all' ? 'ทั้งหมด' : g}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Movies Grid */}
-      <div className="px-6 pb-10">
+      {/* Movie Rows by Genre */}
+      <div className="px-6 py-6 space-y-10">
         {loading ? (
           <div className="text-center text-gray-400 py-20">
             <div className="text-5xl mb-4">🎬</div>
             <p>กำลังโหลด...</p>
           </div>
-        ) : filteredMovies.length === 0 ? (
-          <div className="text-center text-gray-400 py-20">
-            <div className="text-5xl mb-4">🔍</div>
-            <p>ไม่พบหนังที่ค้นหา</p>
-          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {filteredMovies.map(movie => (
-              <MovieCard
-                key={movie.id}
-                movie={movie}
-                onWatch={setSelectedMovie}
-              />
+          <>
+            {/* All Movies Row */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">🔥 หนังทั้งหมด</h2>
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                {movies.map(movie => (
+                  <div key={movie.id} className="min-w-[200px]">
+                    <MovieCard movie={movie} onWatch={setSelectedMovie} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Genre Rows */}
+            {genres.map(genre => (
+              <div key={genre}>
+                <h2 className="text-2xl font-bold mb-4">🎭 {genre}</h2>
+                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                  {movies.filter(m => m.genre === genre).map(movie => (
+                    <div key={movie.id} className="min-w-[200px]">
+                      <MovieCard movie={movie} onWatch={setSelectedMovie} />
+                    </div>
+                  ))}
+                </div>
+              </div>
             ))}
-          </div>
+          </>
         )}
       </div>
 

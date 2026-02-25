@@ -10,29 +10,88 @@ const publicClient = createPublicClient({
   transport: http('https://bsc-testnet-rpc.publicnode.com'),
 })
 
+const getTimeLeft = (expiry) => {
+  const diff = Number(expiry) * 1000 - Date.now()
+  if (diff <= 0) return null
+  const days = Math.floor(diff / 86400000)
+  const hours = Math.floor((diff % 86400000) / 3600000)
+  const mins = Math.floor((diff % 3600000) / 60000)
+  if (days > 0) return `เหลือ ${days}วัน ${hours}ชม ${mins}นาที`
+  if (hours > 0) return `เหลือ ${hours}ชม ${mins}นาที`
+  return `เหลือ ${mins}นาที`
+}
+
 export default function MovieCard({ movie, onWatch }) {
   const { address, isConnected } = useAccount()
   const [loading, setLoading] = useState(false)
   const [hasAccess, setHasAccess] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(null)
+  const [inMyList, setInMyList] = useState(false)
   const { writeContractAsync } = useWriteContract()
 
   useEffect(() => {
     if (!address) return
+
+    // เช็ค My List
+    const saved = localStorage.getItem(`mylist_${address}`)
+    const ids = saved ? JSON.parse(saved) : []
+    setInMyList(ids.includes(movie.id))
+
+    // เช็ค access + time
     const checkAccess = async () => {
       try {
-        const result = await publicClient.readContract({
+        const access = await publicClient.readContract({
           address: STREAMING_CONTRACT_ADDRESS,
           abi: STREAMING_ABI,
           functionName: 'hasAccess',
           args: [address, BigInt(movie.id)],
         })
-        setHasAccess(result)
+        setHasAccess(access)
+
+        const rentExp = await publicClient.readContract({
+          address: STREAMING_CONTRACT_ADDRESS,
+          abi: STREAMING_ABI,
+          functionName: 'rentExpiry',
+          args: [address, BigInt(movie.id)],
+        })
+        if (Number(rentExp) > 0) {
+          const t = getTimeLeft(rentExp)
+          if (t) setTimeLeft(`🕐 เช่า ${t}`)
+        }
+
+        const subExp = await publicClient.readContract({
+          address: STREAMING_CONTRACT_ADDRESS,
+          abi: STREAMING_ABI,
+          functionName: 'subscriptionExpiry',
+          args: [address],
+        })
+        if (Number(subExp) * 1000 > Date.now()) {
+          const t = getTimeLeft(subExp)
+          if (t) setTimeLeft(`👑 Subscription ${t}`)
+        }
+
       } catch (err) {
         console.error('Access check error:', err)
       }
     }
     checkAccess()
+    const interval = setInterval(checkAccess, 60000)
+    return () => clearInterval(interval)
   }, [address, movie.id])
+
+  const toggleMyList = () => {
+    if (!address) return
+    const saved = localStorage.getItem(`mylist_${address}`)
+    const ids = saved ? JSON.parse(saved) : []
+    const exists = ids.includes(movie.id)
+    if (exists) {
+      localStorage.setItem(`mylist_${address}`, JSON.stringify(ids.filter(id => id !== movie.id)))
+      setInMyList(false)
+    } else {
+      localStorage.setItem(`mylist_${address}`, JSON.stringify([...ids, movie.id]))
+      setInMyList(true)
+    }
+  }
 
   const handleApproveAndBuy = async (type) => {
     try {
@@ -91,12 +150,17 @@ export default function MovieCard({ movie, onWatch }) {
 
         <div className="mt-4 space-y-2">
           {hasAccess ? (
-            <button
-              onClick={() => onWatch(movie)}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg"
-            >
-              ▶ ดูเลย
-            </button>
+            <div>
+              <button
+                onClick={() => onWatch(movie)}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg"
+              >
+                ▶ ดูเลย
+              </button>
+              {timeLeft && (
+                <p className="text-yellow-400 text-xs text-center mt-2">{timeLeft}</p>
+              )}
+            </div>
           ) : (
             <>
               <button
@@ -115,6 +179,19 @@ export default function MovieCard({ movie, onWatch }) {
               </button>
             </>
           )}
+
+          {/* My List Button */}
+          <button
+            onClick={toggleMyList}
+            disabled={!isConnected}
+            className={`w-full font-bold py-2 rounded-lg text-sm disabled:opacity-50 ${
+              inMyList
+                ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-white'
+            }`}
+          >
+            {inMyList ? '✅ อยู่ใน My List' : '+ เพิ่มใน My List'}
+          </button>
         </div>
       </div>
     </div>
