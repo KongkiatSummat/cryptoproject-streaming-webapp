@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar'
 import MovieCard from '../components/MovieCard'
 import SubscriptionBanner from '../components/SubscriptionBanner'
 import VideoPlayer from '../components/VideoPlayer'
+import MovieRow from '../components/MovieRow'
 
 export default function Home() {
   const [movies, setMovies] = useState([])
@@ -77,31 +78,22 @@ export default function Home() {
           </div>
         ) : (
           <>
+
+
+
             {/* All Movies Row */}
-            <div>
-              <h2 className="text-2xl font-bold mb-4">🔥 หนังทั้งหมด</h2>
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                {movies.map(movie => (
-                  <div key={movie.id} className="min-w-[200px]">
-                    <MovieCard movie={movie} onWatch={setSelectedMovie} />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <MovieRow title="🔥 หนังทั้งหมด" movies={movies} onWatch={setSelectedMovie} />
 
             {/* Genre Rows */}
             {genres.map(genre => (
-              <div key={genre}>
-                <h2 className="text-2xl font-bold mb-4">🎭 {genre}</h2>
-                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                  {movies.filter(m => m.genre === genre).map(movie => (
-                    <div key={movie.id} className="min-w-[200px]">
-                      <MovieCard movie={movie} onWatch={setSelectedMovie} />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <MovieRow
+                key={genre}
+                title={`🎭 ${genre}`}
+                movies={movies.filter(m => m.genre === genre)}
+                onWatch={setSelectedMovie}
+              />
             ))}
+
           </>
         )}
       </div>
