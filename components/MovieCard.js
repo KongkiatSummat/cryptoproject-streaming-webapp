@@ -1,4 +1,5 @@
 'use client'
+import { supabase } from '../lib/supabase'
 import { useState, useEffect } from 'react'
 import { useAccount, useWriteContract } from 'wagmi'
 import { createPublicClient, http, parseEther } from 'viem'
@@ -31,64 +32,31 @@ export default function MovieCard({ movie, onWatch }) {
 
   useEffect(() => {
     if (!address) return
-
-    // เช็ค My List
-    const saved = localStorage.getItem(`mylist_${address}`)
-    const ids = saved ? JSON.parse(saved) : []
-    setInMyList(ids.includes(movie.id))
-
-    // เช็ค access + time
-    const checkAccess = async () => {
-      try {
-        const access = await publicClient.readContract({
-          address: STREAMING_CONTRACT_ADDRESS,
-          abi: STREAMING_ABI,
-          functionName: 'hasAccess',
-          args: [address, BigInt(movie.id)],
-        })
-        setHasAccess(access)
-
-        const rentExp = await publicClient.readContract({
-          address: STREAMING_CONTRACT_ADDRESS,
-          abi: STREAMING_ABI,
-          functionName: 'rentExpiry',
-          args: [address, BigInt(movie.id)],
-        })
-        if (Number(rentExp) > 0) {
-          const t = getTimeLeft(rentExp)
-          if (t) setTimeLeft(`🕐 เช่า ${t}`)
-        }
-
-        const subExp = await publicClient.readContract({
-          address: STREAMING_CONTRACT_ADDRESS,
-          abi: STREAMING_ABI,
-          functionName: 'subscriptionExpiry',
-          args: [address],
-        })
-        if (Number(subExp) * 1000 > Date.now()) {
-          const t = getTimeLeft(subExp)
-          if (t) setTimeLeft(`👑 Subscription ${t}`)
-        }
-
-      } catch (err) {
-        console.error('Access check error:', err)
-      }
+    const checkMyList = async () => {
+      const { data } = await supabase
+        .from('watchlist')
+        .select('id')
+        .eq('wallet_address', address.toLowerCase())
+        .eq('movie_id', movie.id)
+        .single()
+      setInMyList(!!data)
     }
-    checkAccess()
-    const interval = setInterval(checkAccess, 60000)
-    return () => clearInterval(interval)
+    checkMyList()
   }, [address, movie.id])
 
-  const toggleMyList = () => {
+  const toggleMyList = async () => {
     if (!address) return
-    const saved = localStorage.getItem(`mylist_${address}`)
-    const ids = saved ? JSON.parse(saved) : []
-    const exists = ids.includes(movie.id)
-    if (exists) {
-      localStorage.setItem(`mylist_${address}`, JSON.stringify(ids.filter(id => id !== movie.id)))
+    if (inMyList) {
+      await supabase
+        .from('watchlist')
+        .delete()
+        .eq('wallet_address', address.toLowerCase())
+        .eq('movie_id', movie.id)
       setInMyList(false)
     } else {
-      localStorage.setItem(`mylist_${address}`, JSON.stringify([...ids, movie.id]))
+      await supabase
+        .from('watchlist')
+        .insert({ wallet_address: address.toLowerCase(), movie_id: movie.id })
       setInMyList(true)
     }
   }

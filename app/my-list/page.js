@@ -1,4 +1,5 @@
 'use client'
+import { supabase } from '../../lib/supabase'
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { useRouter } from 'next/navigation'
@@ -21,29 +22,31 @@ export default function MyListPage() {
     loadMyList()
   }, [address])
 
-  const loadMyList = async () => {
-    // ดึงจาก localStorage
-    const saved = localStorage.getItem(`mylist_${address}`)
-    if (!saved) return
-
-    const ids = JSON.parse(saved)
-    if (ids.length === 0) return
-
+    const loadMyList = async () => {
     const { data } = await supabase
-      .from('movies')
-      .select('*')
-      .in('id', ids)
+        .from('watchlist')
+        .select('movie_id')
+        .eq('wallet_address', address.toLowerCase())
 
-    setMyList(data || [])
-  }
+    if (!data || data.length === 0) return
 
-  const removeFromList = (movieId) => {
-    const saved = localStorage.getItem(`mylist_${address}`)
-    const ids = saved ? JSON.parse(saved) : []
-    const newIds = ids.filter(id => id !== movieId)
-    localStorage.setItem(`mylist_${address}`, JSON.stringify(newIds))
+    const ids = data.map(d => d.movie_id)
+    const { data: movies } = await supabase
+        .from('movies')
+        .select('*')
+        .in('id', ids)
+
+    setMyList(movies || [])
+    }
+
+    const removeFromList = async (movieId) => {
+    await supabase
+        .from('watchlist')
+        .delete()
+        .eq('wallet_address', address.toLowerCase())
+        .eq('movie_id', movieId)
     setMyList(prev => prev.filter(m => m.id !== movieId))
-  }
+    }
 
   if (!mounted) return null
 

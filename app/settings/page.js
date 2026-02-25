@@ -1,4 +1,5 @@
 'use client'
+import { supabase } from '../../lib/supabase'
 import { useState, useEffect } from 'react'
 import { useAccount, useDisconnect } from 'wagmi'
 import { useRouter } from 'next/navigation'
@@ -45,37 +46,51 @@ export default function SettingsPage() {
     fetchData()
   }, [address])
 
-  const fetchData = async () => {
+    const fetchData = async () => {
     try {
-      const bal = await publicClient.readContract({
+        const bal = await publicClient.readContract({
         address: WATCH_TOKEN_ADDRESS,
         abi: BALANCE_ABI,
         functionName: 'balanceOf',
         args: [address],
-      })
-      setBalance(Number(formatEther(bal)).toLocaleString())
+        })
+        setBalance(Number(formatEther(bal)).toLocaleString())
 
-      const subExp = await publicClient.readContract({
+        const subExp = await publicClient.readContract({
         address: STREAMING_CONTRACT_ADDRESS,
         abi: STREAMING_ABI,
         functionName: 'subscriptionExpiry',
         args: [address],
-      })
-      const subActive = Number(subExp) * 1000 > Date.now()
-      setIsSubscribed(subActive)
-      if (subActive) setSubExpiry(subExp)
-    } catch (err) {
-      console.error(err)
-    }
-  }
+        })
+        const subActive = Number(subExp) * 1000 > Date.now()
+        setIsSubscribed(subActive)
+        if (subActive) setSubExpiry(subExp)
 
-  const handleSaveUsername = () => {
+        // โหลด username จาก Supabase
+        const { data } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('wallet_address', address.toLowerCase())
+        .single()
+
+        if (data?.username) {
+        setUsername(data.username)
+        setSavedUsername(data.username)
+        }
+    } catch (err) {
+        console.error(err)
+    }
+    }
+
+    const handleSaveUsername = async () => {
     if (!address) return
-    localStorage.setItem(`username_${address}`, username)
+    await supabase
+        .from('profiles')
+        .upsert({ wallet_address: address.toLowerCase(), username })
     setSavedUsername(username)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
-  }
+    }
 
   const handleClearMyList = () => {
     if (!address) return

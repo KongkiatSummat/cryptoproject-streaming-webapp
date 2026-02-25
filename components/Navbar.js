@@ -1,4 +1,5 @@
 'use client'
+import { supabase } from '../lib/supabase'
 import { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 import { injected } from 'wagmi/connectors'
@@ -34,9 +35,16 @@ export default function Navbar() {
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
-  if (!address) return
-    const name = localStorage.getItem(`username_${address}`) || ''
-    setUsername(name)
+    if (!address) return
+    const fetchUsername = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('wallet_address', address.toLowerCase())
+        .single()
+      if (data?.username) setUsername(data.username)
+    }
+    fetchUsername()
   }, [address])
 
   useEffect(() => {
