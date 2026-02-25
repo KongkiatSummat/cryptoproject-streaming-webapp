@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Navbar from '../../components/Navbar'
 import MovieCard from '../../components/MovieCard'
 import VideoPlayer from '../../components/VideoPlayer'
-import { supabase } from '../../lib/supabase'
+
 
 export default function MyListPage() {
   const { address, isConnected } = useAccount()
