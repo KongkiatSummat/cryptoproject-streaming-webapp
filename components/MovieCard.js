@@ -31,6 +31,56 @@ export default function MovieCard({ movie, onWatch }) {
   const { writeContractAsync } = useWriteContract()
 
   useEffect(() => {
+    if (!address) {
+      setHasAccess(false)
+      setTimeLeft(null)
+      return
+    }
+
+    setHasAccess(false)
+
+    const checkAccess = async () => {
+      try {
+        const access = await publicClient.readContract({
+          address: STREAMING_CONTRACT_ADDRESS,
+          abi: STREAMING_ABI,
+          functionName: 'hasAccess',
+          args: [address, BigInt(movie.id)],
+        })
+        setHasAccess(access)
+
+        const rentExp = await publicClient.readContract({
+          address: STREAMING_CONTRACT_ADDRESS,
+          abi: STREAMING_ABI,
+          functionName: 'rentExpiry',
+          args: [address, BigInt(movie.id)],
+        })
+        if (Number(rentExp) > 0) {
+          const t = getTimeLeft(rentExp)
+          if (t) setTimeLeft(`🕐 เช่า ${t}`)
+        }
+
+        const subExp = await publicClient.readContract({
+          address: STREAMING_CONTRACT_ADDRESS,
+          abi: STREAMING_ABI,
+          functionName: 'subscriptionExpiry',
+          args: [address],
+        })
+        if (Number(subExp) * 1000 > Date.now()) {
+          const t = getTimeLeft(subExp)
+          if (t) setTimeLeft(`👑 Subscription ${t}`)
+        }
+      } catch (err) {
+        console.error('Access check error:', err)
+      }
+    }
+
+    checkAccess()
+    const interval = setInterval(checkAccess, 60000)
+    return () => clearInterval(interval)
+  }, [address, movie.id])
+
+  useEffect(() => {
     if (!address) return
     const checkMyList = async () => {
       const { data } = await supabase
@@ -148,7 +198,6 @@ export default function MovieCard({ movie, onWatch }) {
             </>
           )}
 
-          {/* My List Button */}
           <button
             onClick={toggleMyList}
             disabled={!isConnected}
