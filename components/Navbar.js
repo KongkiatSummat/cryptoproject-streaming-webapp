@@ -29,8 +29,15 @@ export default function Navbar() {
   const { disconnect } = useDisconnect()
   const router = useRouter()
   const pathname = usePathname()
+  const [username, setUsername] = useState('')
 
   useEffect(() => { setMounted(true) }, [])
+
+  useEffect(() => {
+  if (!address) return
+    const name = localStorage.getItem(`username_${address}`) || ''
+    setUsername(name)
+  }, [address])
 
   useEffect(() => {
     if (!address) return
@@ -101,9 +108,11 @@ export default function Navbar() {
               <span className="text-yellow-400 font-semibold hidden sm:block">
                 💰 {balance} WATCH
               </span>
+
               <span className="text-gray-400 text-sm hidden sm:block">
-                {address?.slice(0, 6)}...{address?.slice(-4)}
+                {username || `${address?.slice(0, 6)}...${address?.slice(-4)}`}
               </span>
+
               <button
                 onClick={() => disconnect()}
                 className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm"
