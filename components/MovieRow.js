@@ -7,9 +7,8 @@ export default function MovieRow({ title, movies, onWatch }) {
 
   const scroll = (direction) => {
     if (rowRef.current) {
-      const scrollAmount = 600
       rowRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        left: direction === 'left' ? -600 : 600,
         behavior: 'smooth'
       })
     }
@@ -20,11 +19,11 @@ export default function MovieRow({ title, movies, onWatch }) {
   return (
     <div className="mb-10">
       <h2 className="text-2xl font-bold mb-4 px-2">{title}</h2>
-      <div className="relative group">
+      <div className="flex items-center gap-2">
         {/* ปุ่มซ้าย */}
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-0 bottom-0 z-10 w-12 bg-black bg-opacity-50 hover:bg-opacity-80 text-white text-2xl flex items-center justify-center opacity-100 transition-opacity rounded-r-lg"
+          className="flex-shrink-0 w-10 h-10 bg-gray-700 hover:bg-red-600 text-white text-xl font-bold rounded-full flex items-center justify-center transition-colors"
         >
           ❮
         </button>
@@ -32,8 +31,8 @@ export default function MovieRow({ title, movies, onWatch }) {
         {/* แถวหนัง */}
         <div
           ref={rowRef}
-          className="flex gap-4 overflow-x-auto pb-4 scroll-smooth px-14"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+          className="flex gap-4 overflow-x-auto flex-1"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {movies.map(movie => (
             <div key={movie.id} className="min-w-[200px] max-w-[200px]">
@@ -45,7 +44,7 @@ export default function MovieRow({ title, movies, onWatch }) {
         {/* ปุ่มขวา */}
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-0 bottom-0 z-10 w-12 bg-black bg-opacity-50 hover:bg-opacity-80 text-white text-2xl flex items-center justify-center opacity-100 transition-opacity rounded-l-lg"
+          className="flex-shrink-0 w-10 h-10 bg-gray-700 hover:bg-red-600 text-white text-xl font-bold rounded-full flex items-center justify-center transition-colors"
         >
           ❯
         </button>
