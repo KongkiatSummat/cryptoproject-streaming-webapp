@@ -78,7 +78,7 @@ export default function Navbar() {
   if (!mounted) return (
     <nav className="bg-gray-900 text-white px-6 py-4 flex justify-between items-center">
       <span className="text-red-500 text-2xl font-bold flex items-center gap-2">
-        <img src="/favicon.ico" className="w-8 h-8" />CryptoFlix
+        <img src="/favicon.ico" className="w-8 h-8" />CryptoWatch
         
       </span>
     </nav>
@@ -93,7 +93,7 @@ export default function Navbar() {
             onClick={() => router.push('/')}
             className="text-red-500 text-2xl font-bold cursor-pointer flex items-center gap-"
           >
-              <img src="/favicon.ico" className="w-8 h-8" />CryptoFlix
+              <img src="/favicon.ico" className="w-8 h-8" />CryptoWatch
               
           </span>
 
