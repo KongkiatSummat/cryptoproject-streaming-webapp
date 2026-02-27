@@ -91,7 +91,7 @@ export default function Navbar() {
         <div className="flex items-center gap-8">
           <span
             onClick={() => router.push('/')}
-            className="text-red-500 text-2xl font-bold cursor-pointer"
+            className="text-red-500 text-2xl font-bold cursor-pointer flex items-center gap-"
           >
               <img src="/favicon.ico" className="w-8 h-8" />CryptoFlix
               
